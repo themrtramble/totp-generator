@@ -428,10 +428,47 @@ body::after {
 }
 
 .token-hint {
-  margin: 0 0 1.15rem;
+  margin: 0 0 0.65rem;
   font-size: 0.72rem;
   color: var(--text-dim);
   letter-spacing: 0.02em;
+}
+
+.skew-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.68rem;
+  color: var(--warning);
+  letter-spacing: 0.01em;
+  opacity: 0.9;
+}
+
+.account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  margin: 0 auto 1rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(124, 108, 255, 0.1);
+  border: 1px solid rgba(124, 108, 255, 0.22);
+}
+
+.account-chip svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.account-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 16rem;
 }
 
 .token-actions {
@@ -439,6 +476,90 @@ body::after {
   gap: 0.55rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+/* Previous period code (clock skew helper) */
+.previous-row {
+  margin-top: 1.1rem;
+  padding-top: 0.95rem;
+  border-top: 1px solid var(--border);
+}
+
+.previous-toggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.previous-toggle:hover {
+  color: var(--text-muted);
+}
+
+.previous-toggle svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s var(--ease);
+}
+
+.previous-toggle.open svg {
+  transform: rotate(180deg);
+}
+
+.previous-body {
+  margin-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.previous-code {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  gap: 0.28rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.previous-code:hover {
+  border-color: rgba(124, 108, 255, 0.4);
+  background: rgba(124, 108, 255, 0.06);
+}
+
+.prev-digit {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 0.85rem;
+  text-align: center;
+}
+
+.prev-digit.gap-after {
+  margin-right: 0.28rem;
+}
+
+.previous-note {
+  font-size: 0.65rem;
+  color: var(--text-dim);
 }
 
 .btn {
@@ -523,6 +644,40 @@ body::after {
   background: rgba(148, 163, 184, 0.12);
   color: var(--text);
   border-color: var(--border-strong);
+}
+
+.field-tools {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+}
+
+.text-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  opacity: 0.85;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.text-btn:hover {
+  opacity: 1;
+}
+
+.text-btn.danger {
+  color: var(--danger);
+  opacity: 0.7;
+}
+
+.text-btn.danger:hover {
+  opacity: 1;
 }
 
 /* Form */

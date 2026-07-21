@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Generate time-based one-time passwords (TOTP) entirely in your browser.">
+  <meta name="description" content="Generate time-based one-time passwords (TOTP) entirely in your browser. Offline, private, no server.">
   <meta name="theme-color" content="#070b14">
-  <title>TOTP Generator</title>
+  <meta name="author" content="MrTramble / tramblebot">
+  <title>TOTP Generator · MrTramble</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -20,7 +21,7 @@
   <script defer src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script defer src="js/assets/otpauth-9.1.3.min.js"></script>
   <script defer src="js/assets/clipboard-2.0.6.min.js"></script>
-  <script defer src="js/app.js?v=3.0"></script>
+  <script defer src="js/app.js?v=3.2"></script>
 
   <main id="app" class="page" v-cloak>
     <div class="shell">
@@ -38,11 +39,20 @@
           <span class="badge"><span class="dot"></span> Offline</span>
           <span class="badge">No server</span>
           <span class="badge">Local only</span>
+          <span class="badge">otpauth URI</span>
         </div>
       </header>
 
       <div class="card">
         <section class="token-panel">
+          <div v-if="accountLabel" class="account-chip" :title="accountLabel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>{{ accountLabel }}</span>
+          </div>
+
           <div class="token-ring-wrap" :class="{ urgent: isUrgent }" aria-hidden="true">
             <svg class="token-ring" viewBox="0 0 118 118">
               <defs>
@@ -90,7 +100,9 @@
             >{{ d.char }}</span>
           </div>
 
-          <p class="token-hint">{{ token ? 'Tap code to copy' : 'Enter a valid secret key' }}</p>
+          <p class="token-hint">{{ token ? 'Tap code to copy' : 'Enter a valid secret key or paste an otpauth URI' }}</p>
+
+          <p v-if="clockSkewHint" class="skew-hint">{{ clockSkewHint }}</p>
 
           <div class="timer-bar" :class="{ urgent: isUrgent }" aria-hidden="true">
             <span :style="{ width: progressPercent + '%' }"></span>
@@ -114,6 +126,51 @@
               </svg>
               {{ copied ? 'Copied!' : 'Copy code' }}
             </button>
+            <button
+              type="button"
+              class="btn btn-ghost"
+              :disabled="!shareUrl"
+              title="Copy private share link (# fragment)"
+              @click="copyShareLink"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              Share
+            </button>
+          </div>
+
+          <div class="previous-row" v-if="previousToken">
+            <button
+              type="button"
+              class="previous-toggle"
+              :class="{ open: showPrevious }"
+              @click="showPrevious = !showPrevious"
+              :aria-expanded="showPrevious"
+            >
+              Previous code
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="previous-body" :class="{ open: showPrevious }" v-show="showPrevious">
+              <button
+                type="button"
+                class="previous-code"
+                :aria-label="'Previous code ' + previousToken + '. Click to copy'"
+                @click="copyPrevious"
+                title="Copy previous period code (clock skew)"
+              >
+                <span
+                  v-for="(ch, i) in previousDigits"
+                  :key="'p'+i"
+                  class="prev-digit"
+                  :class="{ 'gap-after': (i + 1) % 3 === 0 && i < previousDigits.length - 1 }"
+                >{{ ch }}</span>
+              </button>
+              <span class="previous-note">Use if the site rejects the current code</span>
+            </div>
           </div>
         </section>
 
@@ -121,7 +178,7 @@
           <div class="field">
             <div class="field-label">
               <label for="secret">Secret key</label>
-              <span class="field-hint">Base32 · stays on device</span>
+              <span class="field-hint">Base32 · otpauth URI · stays on device</span>
             </div>
             <div class="input-wrap">
               <input
@@ -130,7 +187,10 @@
                 :class="{ invalid: secretError }"
                 :type="showSecret ? 'text' : 'password'"
                 v-model="secret_key"
-                placeholder="e.g. JBSWY3DPEHPK3PXP"
+                @input="onSecretInput"
+                @paste="onSecretPaste"
+                @blur="normalizeSecretField"
+                placeholder="Base32 secret or otpauth://totp/..."
                 autocomplete="off"
                 spellcheck="false"
                 autocapitalize="characters"
@@ -140,7 +200,7 @@
                 class="input-icon-btn"
                 :title="showSecret ? 'Hide secret' : 'Show secret'"
                 :aria-label="showSecret ? 'Hide secret' : 'Show secret'"
-                @click="showSecret = !showSecret"
+                @click="showSecret = !showSecret; persistPrefs()"
               >
                 <svg v-if="!showSecret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -152,6 +212,14 @@
                 </svg>
               </button>
             </div>
+            <div class="field-tools">
+              <button type="button" class="text-btn" @click="normalizeSecretField" title="Strip spaces and uppercase">
+                Clean secret
+              </button>
+              <button type="button" class="text-btn danger" @click="clearSecret" title="Clear secret from memory">
+                Clear
+              </button>
+            </div>
             <p v-if="secretError" class="error-msg">{{ secretError }}</p>
           </div>
 
@@ -160,7 +228,7 @@
               type="button"
               class="advanced-toggle"
               :class="{ open: showAdvanced }"
-              @click="showAdvanced = !showAdvanced"
+              @click="showAdvanced = !showAdvanced; persistPrefs()"
               :aria-expanded="showAdvanced"
             >
               Advanced options
@@ -225,6 +293,7 @@
             <span class="meta-pill">{{ algorithm }}</span>
             <span class="meta-pill">{{ digits }} digits</span>
             <span class="meta-pill">{{ period }}s period</span>
+            <span class="meta-pill dim">prefs saved locally</span>
           </div>
         </section>
       </div>
@@ -239,7 +308,7 @@
   </main>
 
   <footer class="site-footer">
-    <span class="watermark">MrTramble · itsmrtramble</span>
+    <span class="watermark">MrTramble · itsmrtramble · tramblebot</span>
   </footer>
 </body>
 </html>
