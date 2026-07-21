@@ -16,11 +16,17 @@ Useful when you lose access to your phone or authenticator app but still have th
 - Fully offline — runs 100% in the browser
 - Smooth countdown ring + digit tiles with flip animation
 - Tap code or button to copy
+- Paste `otpauth://totp/...` URIs (auto-imports secret + settings)
+- Export `otpauth://` URI and private share links (`#` fragment)
+- Previous / next period codes for clock-skew recovery
+- Local preferences (secret + settings) via `localStorage`
+- Keyboard shortcuts: `c` copy · `s` share · `p` adjacent · `/` focus secret · `Ctrl+Enter` copy
+- Tab visibility pause (saves CPU when backgrounded)
 - Advanced options:
   - Digits: 6 / 7 / 8
   - Period: 15s / 30s / 60s / 90s
   - Algorithm: SHA-1, SHA-256, SHA-512
-- Secret show/hide toggle
+- Secret show/hide, clean, and clear controls
 - URL parameters for key, digits, period, and algorithm
 - Clean dark glass UI
 
