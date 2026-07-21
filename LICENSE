@@ -6,9 +6,6 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-Based in part on work from the original totp-generator by Dan Hersam
-(https://github.com/jaden/totp-generator).
-
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
