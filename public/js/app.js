@@ -196,6 +196,7 @@ const app = Vue.createApp({
     this.tick();
     this.startSmoothLoop();
     this.bindLifecycleListeners();
+    this.bindKeyboardShortcuts();
 
     this.clipboardButton = new ClipboardJS('#clipboard-button');
     this.clipboardButton.on('success', (e) => {
@@ -207,6 +208,7 @@ const app = Vue.createApp({
   unmounted() {
     this.stopSmoothLoop();
     this.unbindLifecycleListeners();
+    this.unbindKeyboardShortcuts();
     clearTimeout(this._copyResetTimer);
     clearTimeout(this._toastTimer);
     clearTimeout(this._flipClearTimer);
@@ -400,6 +402,62 @@ const app = Vue.createApp({
       }
       if (this._onHashChange) {
         window.removeEventListener('hashchange', this._onHashChange);
+      }
+    },
+
+    isTypingTarget(el) {
+      if (!el) return false;
+      const tag = (el.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+    },
+
+    bindKeyboardShortcuts() {
+      this._onKeydown = (event) => {
+        // Ignore when typing in fields (except Ctrl/Cmd combos we handle)
+        const typing = this.isTypingTarget(event.target);
+        const mod = event.ctrlKey || event.metaKey;
+
+        // Ctrl/Cmd+Enter → copy current code (works even in inputs)
+        if (mod && event.key === 'Enter') {
+          event.preventDefault();
+          this.copyToken();
+          return;
+        }
+
+        // Ctrl/Cmd+Shift+C → copy code (avoid clobbering normal copy)
+        if (mod && event.shiftKey && (event.key === 'C' || event.key === 'c')) {
+          event.preventDefault();
+          this.copyToken();
+          return;
+        }
+
+        if (typing) return;
+
+        // c → copy, s → share link, p → toggle previous, / → focus secret
+        if (event.key === 'c' || event.key === 'C') {
+          event.preventDefault();
+          this.copyToken();
+        } else if (event.key === 's' || event.key === 'S') {
+          event.preventDefault();
+          this.copyShareLink();
+        } else if (event.key === 'p' || event.key === 'P') {
+          event.preventDefault();
+          if (this.previousToken) this.showPrevious = !this.showPrevious;
+        } else if (event.key === '/') {
+          event.preventDefault();
+          const input = document.getElementById('secret');
+          if (input) input.focus();
+        } else if (event.key === 'Escape') {
+          const input = document.getElementById('secret');
+          if (input && document.activeElement === input) input.blur();
+        }
+      };
+      window.addEventListener('keydown', this._onKeydown);
+    },
+
+    unbindKeyboardShortcuts() {
+      if (this._onKeydown) {
+        window.removeEventListener('keydown', this._onKeydown);
       }
     },
 
