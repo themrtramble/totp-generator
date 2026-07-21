@@ -151,6 +151,7 @@ const app = Vue.createApp({
       progressFraction: 1,
       token: null,
       previousToken: null,
+      nextToken: null,
       flipKeys: {},
       clipboardButton: null,
       showSecret: true,
@@ -251,6 +252,11 @@ const app = Vue.createApp({
       return String(this.previousToken).split('');
     },
 
+    nextDigits() {
+      if (!this.nextToken) return [];
+      return String(this.nextToken).split('');
+    },
+
     normalizedSecret() {
       return normalizeSecret(this.secret_key);
     },
@@ -289,6 +295,21 @@ const app = Vue.createApp({
       const qs = q.toString();
       // Prefer fragment so secret is not sent to servers / logs
       return base + (qs ? '?' + qs : '') + '#/' + secret;
+    },
+
+    /** Standard otpauth:// URI for authenticator import / backup. */
+    otpAuthUri() {
+      const secret = this.normalizedSecret;
+      if (!secret || !this.secretStatus.ok) return '';
+
+      const label = encodeURIComponent(this.accountLabel || 'TOTP Generator');
+      const params = new URLSearchParams();
+      params.set('secret', secret);
+      params.set('issuer', 'MrTramble');
+      params.set('algorithm', this.algorithm);
+      params.set('digits', String(Number(this.digits) || 6));
+      params.set('period', String(Number(this.period) || 30));
+      return 'otpauth://totp/' + label + '?' + params.toString();
     },
 
     localClockLabel() {
@@ -525,6 +546,7 @@ const app = Vue.createApp({
       if (!this.totp) {
         this.token = null;
         this.previousToken = null;
+        this.nextToken = null;
         this._lastToken = null;
         this.secretError = this.secretStatus.message || 'Invalid Base32 secret key';
         return;
@@ -536,19 +558,22 @@ const app = Vue.createApp({
         const nowSec = getCurrentSeconds();
         const period = Math.max(Number(this.period) || 30, 1);
         const digits = Number(this.digits) || 6;
-        const next = truncateTo(this.totp.generate(), digits);
+        const current = truncateTo(this.totp.generate(), digits);
         const prev = this.generateAt(nowSec - period);
+        const upcoming = this.generateAt(nowSec + period);
 
-        if (this._lastToken !== null && this._lastToken !== next) {
-          this.triggerDigitFlips(next, this._lastToken);
+        if (this._lastToken !== null && this._lastToken !== current) {
+          this.triggerDigitFlips(current, this._lastToken);
         }
 
-        this.token = next;
+        this.token = current;
         this.previousToken = prev;
-        this._lastToken = next;
+        this.nextToken = upcoming;
+        this._lastToken = current;
       } catch (e) {
         this.token = null;
         this.previousToken = null;
+        this.nextToken = null;
         this._lastToken = null;
         this.secretError = 'Could not generate token';
       }
@@ -668,6 +693,36 @@ const app = Vue.createApp({
         });
       } else {
         this.fallbackCopy(url, 'Share link copied (uses # fragment)');
+      }
+    },
+
+    copyOtpAuthUri() {
+      const uri = this.otpAuthUri;
+      if (!uri) {
+        this.showCopied('Enter a valid secret first');
+        return;
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(uri).then(() => {
+          this.showCopied('otpauth URI copied');
+        }).catch(() => {
+          this.fallbackCopy(uri, 'otpauth URI copied');
+        });
+      } else {
+        this.fallbackCopy(uri, 'otpauth URI copied');
+      }
+    },
+
+    copyNext() {
+      if (!this.nextToken) return;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(this.nextToken).then(() => {
+          this.showCopied('Next period code copied');
+        }).catch(() => {
+          this.fallbackCopy(this.nextToken, 'Next period code copied');
+        });
+      } else {
+        this.fallbackCopy(this.nextToken, 'Next period code copied');
       }
     },
 
