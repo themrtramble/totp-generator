@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Generate time-based one-time passwords (TOTP) entirely in your browser.">
+  <meta name="theme-color" content="#070b14">
+  <title>TOTP Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="bg-scene" aria-hidden="true"></div>
+  <div class="bg-orb o1" aria-hidden="true"></div>
+  <div class="bg-orb o2" aria-hidden="true"></div>
+  <div class="bg-orb o3" aria-hidden="true"></div>
+
+  <script defer src="js/assets/vue-3.4.20.global.prod.js"></script>
+  <script defer src="js/assets/otpauth-9.1.3.min.js"></script>
+  <script defer src="js/assets/clipboard-2.0.6.min.js"></script>
+  <script defer src="js/app.js?v=3.0"></script>
+
+  <main id="app" class="page" v-cloak>
+    <div class="shell">
+
+      <header class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h1>TOTP Generator</h1>
+        <p>Secure one-time codes — fully offline in your browser</p>
+        <div class="badge-row">
+          <span class="badge"><span class="dot"></span> Offline</span>
+          <span class="badge">No server</span>
+          <span class="badge">Local only</span>
+        </div>
+      </header>
+
+      <div class="card">
+        <section class="token-panel">
+          <div class="token-ring-wrap" :class="{ urgent: isUrgent }" aria-hidden="true">
+            <svg class="token-ring" viewBox="0 0 118 118">
+              <defs>
+                <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b7cff"/>
+                  <stop offset="55%" stop-color="#5b4dff"/>
+                  <stop offset="100%" stop-color="#2ee6c5"/>
+                </linearGradient>
+              </defs>
+              <circle class="track" cx="59" cy="59" r="50"/>
+              <circle
+                class="progress"
+                :class="{ urgent: isUrgent }"
+                cx="59" cy="59" r="50"
+                :stroke-dasharray="circumference"
+                :stroke-dashoffset="ringOffset"
+              />
+            </svg>
+            <div class="token-ring-center">
+              <span class="secs" :class="{ urgent: isUrgent }">{{ updatingIn }}</span>
+              <span class="label">sec left</span>
+            </div>
+          </div>
+
+          <div
+            class="token-digits"
+            id="token"
+            role="button"
+            tabindex="0"
+            :aria-label="token ? 'One-time code ' + token + '. Click to copy' : 'No code yet'"
+            :title="token ? 'Click to copy' : ''"
+            @click="copyToken"
+            @keydown.enter.prevent="copyToken"
+            @keydown.space.prevent="copyToken"
+          >
+            <span
+              v-for="(d, i) in tokenDigits"
+              :key="i"
+              class="digit"
+              :class="{
+                flip: d.flip,
+                placeholder: !token,
+                'gap-after': token && (i + 1) % 3 === 0 && i < tokenDigits.length - 1
+              }"
+            >{{ d.char }}</span>
+          </div>
+
+          <p class="token-hint">{{ token ? 'Tap code to copy' : 'Enter a valid secret key' }}</p>
+
+          <div class="timer-bar" :class="{ urgent: isUrgent }" aria-hidden="true">
+            <span :style="{ width: progressPercent + '%' }"></span>
+          </div>
+
+          <div class="token-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              :class="{ copied: copied }"
+              id="clipboard-button"
+              :data-clipboard-text="token || ''"
+              :disabled="!token"
+            >
+              <svg v-if="!copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              {{ copied ? 'Copied!' : 'Copy code' }}
+            </button>
+          </div>
+        </section>
+
+        <section class="form-panel">
+          <div class="field">
+            <div class="field-label">
+              <label for="secret">Secret key</label>
+              <span class="field-hint">Base32 · stays on device</span>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="secret"
+                class="input has-toggle"
+                :class="{ invalid: secretError }"
+                :type="showSecret ? 'text' : 'password'"
+                v-model="secret_key"
+                placeholder="e.g. JBSWY3DPEHPK3PXP"
+                autocomplete="off"
+                spellcheck="false"
+                autocapitalize="characters"
+              >
+              <button
+                type="button"
+                class="input-icon-btn"
+                :title="showSecret ? 'Hide secret' : 'Show secret'"
+                :aria-label="showSecret ? 'Hide secret' : 'Show secret'"
+                @click="showSecret = !showSecret"
+              >
+                <svg v-if="!showSecret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <p v-if="secretError" class="error-msg">{{ secretError }}</p>
+          </div>
+
+          <div class="advanced">
+            <button
+              type="button"
+              class="advanced-toggle"
+              :class="{ open: showAdvanced }"
+              @click="showAdvanced = !showAdvanced"
+              :aria-expanded="showAdvanced"
+            >
+              Advanced options
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <div class="advanced-body" :class="{ open: showAdvanced }">
+              <div class="field">
+                <div class="field-label">
+                  <label>Digits</label>
+                </div>
+                <div class="chips" role="group" aria-label="Number of digits">
+                  <button
+                    v-for="n in digitOptions"
+                    :key="'d'+n"
+                    type="button"
+                    class="chip"
+                    :class="{ active: digits === n }"
+                    @click="digits = n"
+                  >{{ n }}</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field-label">
+                  <label>Period</label>
+                  <span class="field-hint">seconds</span>
+                </div>
+                <div class="chips" role="group" aria-label="Token period">
+                  <button
+                    v-for="n in periodOptions"
+                    :key="'p'+n"
+                    type="button"
+                    class="chip"
+                    :class="{ active: period === n }"
+                    @click="period = n"
+                  >{{ n }}s</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field-label">
+                  <label>Algorithm</label>
+                </div>
+                <div class="chips" role="group" aria-label="Hash algorithm">
+                  <button
+                    v-for="alg in algorithmOptions"
+                    :key="alg.value"
+                    type="button"
+                    class="chip"
+                    :class="{ active: algorithm === alg.value }"
+                    @click="algorithm = alg.value"
+                  >{{ alg.label }}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meta-bar" v-if="token">
+            <span class="meta-pill">{{ algorithm }}</span>
+            <span class="meta-pill">{{ digits }} digits</span>
+            <span class="meta-pill">{{ period }}s period</span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="toast" :class="{ show: toastVisible }" role="status" aria-live="polite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+      {{ toastMessage }}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span class="watermark">TOTP · browser only</span>
+  </footer>
+</body>
+</html>
