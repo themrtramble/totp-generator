@@ -237,6 +237,17 @@ body::after {
   animation: pulseDot 2s ease-in-out infinite;
 }
 
+.badge .dot.muted {
+  background: var(--text-dim);
+  box-shadow: none;
+  animation: none;
+}
+
+.badge.warn {
+  color: var(--warning);
+  border-color: rgba(255, 200, 87, 0.28);
+}
+
 @keyframes pulseDot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.65; transform: scale(0.85); }

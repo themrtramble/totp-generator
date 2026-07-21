@@ -177,6 +177,11 @@ const app = Vue.createApp({
       _lastTickSec: null,
       _prefsLoaded: false,
       _suppressSave: false,
+      _loopRunning: false,
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      isTabVisible: typeof document !== 'undefined'
+        ? document.visibilityState !== 'hidden'
+        : true,
     };
   },
 
@@ -190,6 +195,7 @@ const app = Vue.createApp({
 
     this.tick();
     this.startSmoothLoop();
+    this.bindLifecycleListeners();
 
     this.clipboardButton = new ClipboardJS('#clipboard-button');
     this.clipboardButton.on('success', (e) => {
@@ -199,7 +205,8 @@ const app = Vue.createApp({
   },
 
   unmounted() {
-    if (this._rafId) cancelAnimationFrame(this._rafId);
+    this.stopSmoothLoop();
+    this.unbindLifecycleListeners();
     clearTimeout(this._copyResetTimer);
     clearTimeout(this._toastTimer);
     clearTimeout(this._flipClearTimer);
@@ -353,8 +360,55 @@ const app = Vue.createApp({
       });
     },
 
+    bindLifecycleListeners() {
+      this._onVisibility = () => {
+        this.isTabVisible = document.visibilityState !== 'hidden';
+        if (this.isTabVisible) {
+          // Catch up immediately when user returns to the tab
+          this.tick();
+          this.startSmoothLoop();
+        } else {
+          this.stopSmoothLoop();
+        }
+      };
+      this._onOnline = () => {
+        this.isOnline = true;
+      };
+      this._onOffline = () => {
+        this.isOnline = false;
+      };
+      this._onHashChange = () => {
+        this.getKeyFromUrl();
+        this.tick();
+      };
+
+      document.addEventListener('visibilitychange', this._onVisibility);
+      window.addEventListener('online', this._onOnline);
+      window.addEventListener('offline', this._onOffline);
+      window.addEventListener('hashchange', this._onHashChange);
+    },
+
+    unbindLifecycleListeners() {
+      if (this._onVisibility) {
+        document.removeEventListener('visibilitychange', this._onVisibility);
+      }
+      if (this._onOnline) {
+        window.removeEventListener('online', this._onOnline);
+      }
+      if (this._onOffline) {
+        window.removeEventListener('offline', this._onOffline);
+      }
+      if (this._onHashChange) {
+        window.removeEventListener('hashchange', this._onHashChange);
+      }
+    },
+
     startSmoothLoop() {
+      if (this._loopRunning) return;
+      this._loopRunning = true;
+
       const loop = () => {
+        if (!this._loopRunning) return;
         this.updateProgress();
         const sec = getCurrentSeconds();
         if (sec !== this._lastTickSec) {
@@ -364,6 +418,14 @@ const app = Vue.createApp({
         this._rafId = requestAnimationFrame(loop);
       };
       this._rafId = requestAnimationFrame(loop);
+    },
+
+    stopSmoothLoop() {
+      this._loopRunning = false;
+      if (this._rafId) {
+        cancelAnimationFrame(this._rafId);
+        this._rafId = null;
+      }
     },
 
     updateProgress() {

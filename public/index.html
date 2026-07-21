@@ -21,7 +21,7 @@
   <script defer src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script defer src="js/assets/otpauth-9.1.3.min.js"></script>
   <script defer src="js/assets/clipboard-2.0.6.min.js"></script>
-  <script defer src="js/app.js?v=3.2"></script>
+  <script defer src="js/app.js?v=3.3"></script>
 
   <main id="app" class="page" v-cloak>
     <div class="shell">
@@ -36,10 +36,14 @@
         <h1>TOTP Generator</h1>
         <p>Secure one-time codes — fully offline in your browser</p>
         <div class="badge-row">
-          <span class="badge"><span class="dot"></span> Offline</span>
+          <span class="badge"><span class="dot"></span> Client-side</span>
           <span class="badge">No server</span>
           <span class="badge">Local only</span>
           <span class="badge">otpauth URI</span>
+          <span class="badge" :class="{ warn: !isOnline }" :title="isOnline ? 'Browser reports online (codes still local)' : 'Browser offline — codes still work'">
+            <span class="dot" :class="{ muted: !isOnline }"></span>
+            {{ isOnline ? 'Ready' : 'Offline mode' }}
+          </span>
         </div>
       </header>
 
