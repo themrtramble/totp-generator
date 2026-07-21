@@ -152,14 +152,7 @@ Copyright (C) 2026 MrTramble
 
 ## Author
 
-**MrTramble** ([@themrtramble](https://github.com/themrtramble))
+**MrTramble** · tramble · mrtramble · itsmrtramble
 
-Repository: [github.com/themrtramble/totp-generator](https://github.com/themrtramble/totp-generator)
-
----
-
-## Credits
-
-Based on the original open-source [totp-generator](https://github.com/jaden/totp-generator) by [Dan Hersam](https://dan.hersam.com).
-
-TOTP implementation powered by [otpauth](https://github.com/hectorm/otpauth).
+- GitHub: [@themrtramble](https://github.com/themrtramble)
+- Repository: [github.com/themrtramble/totp-generator](https://github.com/themrtramble/totp-generator)
