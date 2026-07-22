@@ -1,0 +1,11 @@
+{
+  "name": "totp-generator",
+  "version": "4.1.0",
+  "private": true,
+  "description": "Client-side TOTP generator with multi-account vault",
+  "scripts": {
+    "start": "npx --yes serve public -l 8080",
+    "serve": "npx --yes serve public -l 8080"
+  },
+  "license": "GPL-3.0-or-later"
+}
