@@ -1868,3 +1868,13 @@ kbd {
   body { background: #fff; color: #000; }
   .card { box-shadow: none; border: 1px solid #ccc; }
 }
+
+@media (hover: hover) and (min-width: 900px) {
+  .card {
+    transition: transform 0.25s var(--ease), box-shadow 0.25s ease;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 44px 110px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  }
+}
