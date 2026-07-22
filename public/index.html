@@ -227,6 +227,7 @@
                 >{{ d.char }}</span>
               </div>
 
+              <span id="token-live" class="sr-only" aria-live="polite">{{ token ? ('Code ' + token + ', ' + updatingIn + ' seconds left') : 'No code' }}</span>
               <p class="token-hint">
                 {{ token ? 'Tap code to copy · Ctrl+Enter · c' : 'Enter a valid secret or paste an otpauth URI' }}
               </p>
