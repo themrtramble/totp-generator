@@ -526,6 +526,7 @@
                 <span class="meta-pill">{{ algorithm }}</span>
                 <span class="meta-pill">{{ digits }} digits</span>
                 <span class="meta-pill">{{ period }}s period</span>
+                <span class="meta-pill" v-if="normalizedSecret">{{ normalizedSecret.length }} char secret</span>
                 <span class="meta-pill dim">prefs + vault local</span>
               </div>
             </section>
