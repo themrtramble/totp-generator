@@ -146,7 +146,7 @@
           </ul>
           <div class="vault-empty" v-else>
             <strong>{{ vault.length ? 'No matches' : 'Vault is empty' }}</strong>
-            Save secrets locally to switch accounts instantly.
+            Save secrets locally to switch accounts instantly.<br><button type="button" class="btn btn-soft btn-sm" style="margin-top:0.75rem" @click="saveCurrentToVault">Save current secret</button>
           </div>
 
           <div class="vault-foot">
