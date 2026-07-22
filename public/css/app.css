@@ -1898,3 +1898,7 @@ kbd {
 .vault-empty .btn {
   margin-top: 0.75rem;
 }
+[data-theme="light"] .chrome-logo {
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 18px rgba(99, 85, 255, 0.22);
+}
