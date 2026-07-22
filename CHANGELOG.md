@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.0.1
+
+- Demo-secret warning, print styles, focus rings, drop-import
+- Vault export empty guard and cache-bust updates
+
 ## 4.0.0 — Ultra-modern vault release
 
 - Multi-account local vault with search, pin, import/export
@@ -10,3 +15,4 @@
 - PWA manifest + offline service worker
 - Expanded keyboard shortcuts and help modal
 - Glass UI redesign with density modes
+
