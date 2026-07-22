@@ -1134,7 +1134,9 @@ const app = Vue.createApp({
 
     deleteActiveAccount() {
       if (!this.activeAccountId) return;
-      if (!window.confirm('Remove this account from the local vault?')) return;
+      const acc = this.vault.find((v) => v.id === this.activeAccountId);
+      const name = (acc && acc.label) ? acc.label : 'this account';
+      if (!window.confirm('Remove ""' + name + '"" from the local vault?')) return;
       this.vault = this.vault.filter((v) => v.id !== this.activeAccountId);
       this.activeAccountId = null;
       this.persistVault();
