@@ -1,11 +1,11 @@
 # TOTP Generator
 
-**Generate TOTP one-time codes entirely in your browser — offline, private, no server.**
+**Ultra-modern TOTP one-time codes — fully offline, private, multi-account vault.**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-themrtramble%2Ftotp-generator-181717?logo=github)](https://github.com/themrtramble/totp-generator)
 
-A modern, client-side **time-based one-time password (TOTP)** generator. Paste a Base32 secret and get authenticator codes instantly — nothing is sent to any server.
+A polished, client-side **time-based one-time password (TOTP)** generator. Paste a Base32 secret (or `otpauth://` URI), save accounts in a local vault, export QR codes, and copy codes instantly — nothing is sent to any server.
 
 Useful when you lose access to your phone or authenticator app but still have the secret key.
 
@@ -13,22 +13,36 @@ Useful when you lose access to your phone or authenticator app but still have th
 
 ## Features
 
+### Core
 - Fully offline — runs 100% in the browser
 - Smooth countdown ring + digit tiles with flip animation
-- Tap code or button to copy
-- Paste `otpauth://totp/...` URIs (auto-imports secret + settings)
-- Export `otpauth://` URI and private share links (`#` fragment)
+- Tap code or button to copy (with optional haptic feedback)
+- Paste / drop `otpauth://totp/...` URIs (auto-imports secret + settings)
+- Export `otpauth://` URI, private share links (`#` fragment), and **QR codes**
 - Previous / next period codes for clock-skew recovery
-- Local preferences (secret + settings) via `localStorage`
-- Keyboard shortcuts: `c` copy · `s` share · `p` adjacent · `/` focus secret · `Ctrl+Enter` copy
+- Manual **clock offset** slider (−60s … +60s)
+- Advanced options: digits (6/7/8), period (15/30/60/90s), SHA-1/256/512
+
+### Vault & productivity
+- **Multi-account vault** with search, pin, color tags, import/export JSON
+- Account label + issuer fields
+- Recently copied history (session + local prefs)
+- Auto-copy when the code refreshes (optional)
+- Keyboard shortcuts (`?` for help) including vault save / quick switch `1`–`9`
+
+### Ultra-modern UI
+- Glass morphism layout with ambient mesh/grid
+- Dark / light / system themes
+- Accent palettes: violet, cyan, rose, emerald, amber
+- Comfortable / compact density
+- Reduce-motion toggle
+- Settings + help modals
+- Installable **PWA** with offline service worker
+
+### Privacy
+- Local preferences + vault via `localStorage` only
 - Tab visibility pause (saves CPU when backgrounded)
-- Advanced options:
-  - Digits: 6 / 7 / 8
-  - Period: 15s / 30s / 60s / 90s
-  - Algorithm: SHA-1, SHA-256, SHA-512
-- Secret show/hide, clean, and clear controls
-- URL parameters for key, digits, period, and algorithm
-- Clean dark glass UI
+- Online/offline status badge (codes still work offline)
 
 ---
 
@@ -45,7 +59,7 @@ No build step required. Open the app from the `public` folder:
    ```
 2. Open `public/index.html` in your browser.
 
-### Option B — local server (recommended)
+### Option B — local server (recommended for PWA / clipboard)
 
 ```bash
 # Python
@@ -57,22 +71,44 @@ npx serve public
 
 Then visit `http://localhost:8080`.
 
+### Option C — GitHub Pages
+
+If Pages is enabled on the repository, the `public/` folder is deployed automatically via the included workflow.
+
 ---
 
 ## Usage
 
-1. Enter your **Base32 secret key** (from your authenticator setup / backup).
-2. The current TOTP code appears in the digit tiles.
-3. Copy the code (tap the digits or **Copy code**).
-4. Optionally open **Advanced options** to change digits, period, or algorithm.
+1. Enter your **Base32 secret key** (or paste an `otpauth://` URI).
+2. Optionally set **Account label** and **Issuer**, then **Save to vault**.
+3. Copy the code (tap the digits, **Copy code**, or press `c`).
+4. Use **QR** to scan into another authenticator, or **URI** to copy the otpauth link.
+5. Open **Settings** for theme, accent, auto-copy, and data tools.
 
 > **Privacy:** Your secret never leaves your device. Generation is done locally with [otpauth](https://github.com/hectorm/otpauth).
 
 ---
 
-## URL parameters
+## Keyboard shortcuts
 
-You can pre-fill settings via the URL.
+| Key | Action |
+|-----|--------|
+| `c` | Copy current code |
+| `Ctrl/Cmd+Enter` | Copy current code (works in inputs) |
+| `s` | Copy private share link |
+| `q` | Show QR code |
+| `p` | Toggle adjacent codes |
+| `v` | Save current account to vault |
+| `b` | Toggle vault panel |
+| `/` | Focus secret field |
+| `,` | Open settings |
+| `?` | Help |
+| `1`–`9` | Load vault account by visible index |
+| `Esc` | Close modals / blur secret |
+
+---
+
+## URL parameters
 
 ### Secret key
 
@@ -111,14 +147,18 @@ Supported algorithms: see [otpauth docs](https://github.com/hectorm/otpauth#supp
 ```
 totp-generator/
 ├── public/
-│   ├── index.html          # App shell
+│   ├── index.html              # App shell
+│   ├── manifest.webmanifest    # PWA manifest
+│   ├── sw.js                   # Offline service worker
 │   ├── css/
-│   │   └── app.css         # Modern UI styles
+│   │   └── app.css             # Ultra-modern UI styles
 │   ├── js/
-│   │   ├── app.js          # Vue app + TOTP logic
-│   │   └── assets/         # Vue, otpauth, clipboard
+│   │   ├── app.js              # Vue app + vault + TOTP logic
+│   │   └── assets/             # Vue, otpauth, clipboard, QR
 │   ├── img/
 │   └── favicon.ico
+├── CHANGELOG.md
+├── SECURITY.md
 ├── LICENSE
 └── README.md
 ```
@@ -132,6 +172,7 @@ totp-generator/
 | [Vue 3](https://vuejs.org/) | UI reactivity |
 | [otpauth](https://github.com/hectorm/otpauth) | TOTP generation |
 | [clipboard.js](https://clipboardjs.com/) | One-click copy |
+| [qrcodejs](https://github.com/davidshimjs/qrcodejs) | Offline QR rendering |
 
 No bundler, no npm install — static files only.
 
@@ -142,7 +183,10 @@ No bundler, no npm install — static files only.
 - Prefer opening the app from a trusted local copy or your own host.
 - Avoid putting secrets in shared URLs (browser history, screenshots, logs).
 - Fragment (`#/key`) is not sent to servers on navigation; query `?key=` may appear in logs — prefer fragment when possible.
+- Vault export JSON contains secrets — store it securely.
 - This tool does not replace a proper authenticator app for everyday use.
+
+See [SECURITY.md](SECURITY.md) for more.
 
 ---
 
