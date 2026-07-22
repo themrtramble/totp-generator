@@ -1097,6 +1097,11 @@ const app = Vue.createApp({
       this._suppressSave = false;
       this.tick();
       this.persistPrefs();
+      const idx = this.vault.findIndex((v) => v.id === id);
+      if (idx >= 0) {
+        this.vault.splice(idx, 1, Object.assign({}, this.vault[idx], { lastUsedAt: Date.now() }));
+        this.persistVault();
+      }
       this.showToast('Loaded ' + (item.label || 'account'), 'info');
     },
 
