@@ -1860,3 +1860,11 @@ kbd {
   background: color-mix(in srgb, var(--accent) 40%, transparent);
   color: var(--text);
 }
+
+@media print {
+  .bg-scene, .bg-grid, .bg-orb, .app-chrome, .site-footer, .toast, .overlay {
+    display: none !important;
+  }
+  body { background: #fff; color: #000; }
+  .card { box-shadow: none; border: 1px solid #ccc; }
+}
