@@ -1836,3 +1836,13 @@ kbd {
 .hidden {
   display: none !important;
 }
+
+/* Mobile vault full-width emphasis */
+@media (max-width: 899px) {
+  .vault-panel {
+    order: -1;
+  }
+  .vault-list {
+    max-height: 28vh;
+  }
+}
