@@ -276,6 +276,11 @@ const app = Vue.createApp({
       return this.updatingIn <= 5 && !!this.token;
     },
 
+    remainingLabel() {
+      if (!this.token) return '';
+      return this.updatingIn + 's remaining';
+    },
+
     tokenDigits() {
       if (!this.token) {
         const count = Number(this.digits) || 6;
@@ -1251,5 +1256,6 @@ const app = Vue.createApp({
 });
 
 app.mount('#app');
+
 
 
