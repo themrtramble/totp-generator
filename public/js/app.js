@@ -4,6 +4,7 @@
  * Author: tramblebot (MrTramble)
  */
 
+const APP_VERSION = '4.0.0';
 const STORAGE_KEY = 'totp-generator:prefs:v2';
 const VAULT_KEY = 'totp-generator:vault:v1';
 const RING_RADIUS = 54;
@@ -1256,6 +1257,7 @@ const app = Vue.createApp({
 });
 
 app.mount('#app');
+
 
 
 
