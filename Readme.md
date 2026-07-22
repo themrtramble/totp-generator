@@ -206,3 +206,18 @@ Copyright (C) 2026 MrTramble
 
 - GitHub: [@themrtramble](https://github.com/themrtramble)
 - Repository: [github.com/themrtramble/totp-generator](https://github.com/themrtramble/totp-generator)
+
+## Where data is stored
+
+There is **no server database**. Secrets and vault data stay in the browser:
+
+| Storage key | Contents |
+|-------------|----------|
+| `totp-generator:prefs:v2` | Active secret, options, theme, history |
+| `totp-generator:vault:v1` | Saved accounts (local only) |
+
+On Windows (Chrome), browser storage lives under:
+
+`%LOCALAPPDATA%\Google\Chrome\User Data\Default\Local Storage\leveldb\`
+
+Use DevTools → Application → Local Storage to inspect keys for this origin.
