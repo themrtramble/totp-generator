@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.1.0
+
+- Tab title shows live countdown + code
+- Vault last-used sorting
+- Empty vault CTA, a11y live region
+- Docs for localStorage paths
+
 ## 4.0.1
 
 - Demo-secret warning, print styles, focus rings, drop-import
@@ -15,4 +22,3 @@
 - PWA manifest + offline service worker
 - Expanded keyboard shortcuts and help modal
 - Glass UI redesign with density modes
-
