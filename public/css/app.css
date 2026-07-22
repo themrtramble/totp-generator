@@ -1855,3 +1855,8 @@ kbd {
   box-shadow: 0 0 0 3px var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+}
