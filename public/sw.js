@@ -1,5 +1,5 @@
 /* TOTP Generator service worker — offline shell cache */
-const CACHE = 'totp-generator-v4.0.1';
+const CACHE = 'totp-generator-v4.0.3';
 const ASSETS = [
   './',
   './index.html',
@@ -11,21 +11,38 @@ const ASSETS = [
   './js/assets/qrcodejs.min.js',
   './manifest.webmanifest',
   './favicon.ico',
+  './favicon.svg',
+  './img/favicon-16.png',
+  './img/favicon-32.png',
+  './img/favicon-48.png',
+  './img/apple-touch-icon.png',
+  './img/icon-192.png',
+  './img/icon-512.png',
   './img/icon-192.svg',
   './img/icon-512.svg',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then((cache) =>
+        Promise.all(
+          ASSETS.map((url) =>
+            cache.add(url).catch(() => {
+              /* skip missing optional assets */
+            })
+          )
+        )
+      )
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
@@ -43,9 +60,8 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
       return cached || network;
     })
   );
 });
-

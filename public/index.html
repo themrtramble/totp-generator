@@ -5,18 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Ultra-modern TOTP generator — multi-account vault, QR export, offline PWA. Fully private, no server.">
   <meta name="theme-color" content="#05070f">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'">
   <meta name="author" content="MrTramble / tramblebot">
   <meta property="og:title" content="TOTP Generator · MrTramble">
   <meta property="og:description" content="Ultra-modern offline TOTP generator with multi-account vault and QR export.">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="img/icon-512.png">
   <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="img/icon-512.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="img/icon-192.svg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
   <title>TOTP Generator · MrTramble</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,21 +34,20 @@
   <div class="bg-orb o2" aria-hidden="true"></div>
   <div class="bg-orb o3" aria-hidden="true"></div>
 
-  <script defer src="js/assets/vue-3.4.20.global.prod.js"></script>
-  <script defer src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script defer src="js/assets/clipboard-2.0.6.min.js"></script>
-  <script defer src="js/assets/qrcodejs.min.js"></script>
-  <script defer src="js/app.js?v=4.0.1"></script>
+  <noscript>
+    <div class="boot-error" style="max-width:420px;margin:4rem auto;padding:1.25rem;border:1px solid #334;border-radius:16px;color:#f1f5ff;font-family:system-ui;text-align:center;background:#121a2e">
+      JavaScript is required for the TOTP Generator.
+    </div>
+  </noscript>
+
+  <div id="boot-error" class="boot-error" hidden></div>
 
   <div id="app" v-cloak>
     <a class="sr-only" href="#token">Skip to code</a>
     <header class="app-chrome">
       <div class="chrome-brand">
         <div class="chrome-logo" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
+          <img src="img/icon-192.png" width="36" height="36" alt="" class="chrome-logo-img">
         </div>
         <div class="chrome-titles">
           <strong>TOTP Generator</strong>
@@ -181,9 +184,9 @@
                 <svg class="token-ring" viewBox="0 0 126 126">
                   <defs>
                     <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="var(--accent)"/>
-                      <stop offset="55%" stop-color="var(--accent-deep)"/>
-                      <stop offset="100%" stop-color="var(--accent-2)"/>
+                      <stop offset="0%" stop-color="#8b7cff"/>
+                      <stop offset="55%" stop-color="#6355ff"/>
+                      <stop offset="100%" stop-color="#2ee6c5"/>
                     </linearGradient>
                   </defs>
                   <circle class="track" cx="63" cy="63" r="54"/>
@@ -687,8 +690,16 @@
       {{ toastMessage }}
     </div>
   </div>
+
+  <!-- Scripts last so #app exists before mount (works with file:// and http) -->
+  <script src="js/assets/vue-3.4.20.global.prod.js"></script>
+  <script src="js/assets/otpauth-9.1.3.min.js"></script>
+  <script src="js/assets/clipboard-2.0.6.min.js"></script>
+  <script src="js/assets/qrcodejs.min.js"></script>
+  <script src="js/app.js?v=4.0.3"></script>
 </body>
 </html>
+
 
 
 

@@ -4,7 +4,7 @@
  * Author: tramblebot (MrTramble)
  */
 
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.0.3';
 const STORAGE_KEY = 'totp-generator:prefs:v2';
 const VAULT_KEY = 'totp-generator:vault:v1';
 const RING_RADIUS = 54;
@@ -241,13 +241,19 @@ const app = Vue.createApp({
     this.registerServiceWorker();
     this.bindDropImport();
 
-    this.clipboardButton = new ClipboardJS('#clipboard-button');
-    this.clipboardButton.on('success', (e) => {
-      this.showCopied('Code copied to clipboard');
-      this.pushCopyHistory(this.token);
-      this.maybeVibrate();
-      e.clearSelection();
-    });
+    if (typeof ClipboardJS !== 'undefined') {
+      try {
+        this.clipboardButton = new ClipboardJS('#clipboard-button');
+        this.clipboardButton.on('success', (e) => {
+          this.showCopied('Code copied to clipboard');
+          this.pushCopyHistory(this.token);
+          this.maybeVibrate();
+          e.clearSelection();
+        });
+      } catch (e) {
+        this.clipboardButton = null;
+      }
+    }
   },
 
   unmounted() {
@@ -462,18 +468,16 @@ const app = Vue.createApp({
     },
 
     restorePrefs() {
-      const prefs = loadJson(STORAGE_KEY);
-      if (!prefs || typeof prefs !== 'object') {
-        // migrate v1
+      let p = loadJson(STORAGE_KEY);
+      if (!p || typeof p !== 'object') {
         const legacy = loadJson('totp-generator:prefs:v1');
         if (legacy && typeof legacy === 'object') {
-          Object.assign(prefs || {}, legacy);
+          p = legacy;
         } else {
           return;
         }
       }
 
-      const p = prefs || loadJson('totp-generator:prefs:v1') || {};
       if (typeof p.secret_key === 'string' && p.secret_key.length) this.secret_key = p.secret_key;
       if ([6, 7, 8].includes(Number(p.digits))) this.digits = Number(p.digits);
       if ([15, 30, 60, 90].includes(Number(p.period))) this.period = Number(p.period);
@@ -1243,8 +1247,14 @@ const app = Vue.createApp({
         if (parsed) this.applyOtpAuth(parsed);
         else this.secret_key = normalizeSecret(raw) || raw;
       }
-      if (queryParams.digits) this.digits = Number(queryParams.digits);
-      if (queryParams.period) this.period = Number(queryParams.period);
+      if (queryParams.digits != null && queryParams.digits !== '') {
+        const d = Number(queryParams.digits);
+        if ([6, 7, 8].includes(d)) this.digits = d;
+      }
+      if (queryParams.period != null && queryParams.period !== '') {
+        const p = Number(queryParams.period);
+        if ([15, 30, 60, 90].includes(p)) this.period = p;
+      }
       if (queryParams.algorithm) {
         const alg = String(queryParams.algorithm).toUpperCase().replace(/-/g, '');
         if (['SHA1', 'SHA256', 'SHA512'].includes(alg)) this.algorithm = alg;
@@ -1264,7 +1274,28 @@ const app = Vue.createApp({
   },
 });
 
-app.mount('#app');
+function showBootError(err) {
+  try {
+    const el = document.getElementById('boot-error');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = 'App failed to start: ' + (err && err.message ? err.message : String(err));
+    el.style.cssText = 'max-width:520px;margin:2rem auto;padding:1rem 1.2rem;border:1px solid rgba(255,107,122,.4);border-radius:14px;color:#ffb4bc;font-family:system-ui,sans-serif;text-align:center;background:rgba(20,12,18,.9)';
+  } catch (e) { /* ignore */ }
+}
+
+try {
+  if (typeof Vue === 'undefined') {
+    throw new Error('Vue failed to load. Open via a local server if file:// is blocked.');
+  }
+  if (typeof OTPAuth === 'undefined') {
+    throw new Error('otpauth library failed to load.');
+  }
+  app.mount('#app');
+} catch (err) {
+  console.error('[TOTP Generator]', err);
+  showBootError(err);
+}
 
 
 

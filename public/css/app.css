@@ -216,6 +216,11 @@ body::after {
   display: none !important;
 }
 
+.boot-error {
+  position: relative;
+  z-index: 50;
+}
+
 /* App chrome */
 .app-chrome {
   position: sticky;
@@ -244,11 +249,20 @@ body::after {
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: linear-gradient(145deg, var(--accent) 0%, var(--accent-deep) 55%, var(--accent-2) 140%);
+  background: transparent;
   display: grid;
   place-items: center;
   box-shadow: 0 8px 22px var(--accent-glow);
   flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chrome-logo-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .chrome-logo svg {
@@ -383,6 +397,7 @@ body::after {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  opacity: 1;
   animation: riseIn 0.65s var(--ease) both;
 }
 
@@ -750,13 +765,14 @@ body::after {
 }
 
 .token-ring .progress {
+  stroke: var(--accent);
   stroke: url(#ringGradient);
   stroke-linecap: round;
   transition: stroke-dashoffset 0.08s linear;
 }
 
 .token-ring .progress.urgent {
-  stroke: var(--danger);
+  stroke: var(--danger) !important;
 }
 
 .token-ring-center {
