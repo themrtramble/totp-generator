@@ -156,6 +156,7 @@
           <header class="hero">
             <h1>Secure one-time codes</h1>
             <p>Fully offline in your browser — nothing leaves this device</p>
+            <p v-if="isDemoKey" class="token-hint" style="margin-bottom:0.75rem;color:var(--warning)">Demo secret loaded — replace with your own key</p>
             <div class="badge-row">
               <span class="badge"><span class="dot"></span> Client-side</span>
               <span class="badge">No server</span>
@@ -687,6 +688,7 @@
   </div>
 </body>
 </html>
+
 
 
 

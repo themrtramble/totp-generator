@@ -286,6 +286,10 @@ const app = Vue.createApp({
       return this.updatingIn + 's remaining';
     },
 
+    isDemoKey() {
+      return isDemoSecret(this.secret_key);
+    },
+
     tokenDigits() {
       if (!this.token) {
         const count = Number(this.digits) || 6;
@@ -1261,6 +1265,7 @@ const app = Vue.createApp({
 });
 
 app.mount('#app');
+
 
 
 
