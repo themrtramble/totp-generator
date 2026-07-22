@@ -231,7 +231,7 @@ body::after {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0 1.15rem;
+  padding: 0 max(1.15rem, env(safe-area-inset-right)) 0 max(1.15rem, env(safe-area-inset-left));
   background: color-mix(in srgb, var(--bg-0) 55%, transparent);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
