@@ -1846,3 +1846,12 @@ kbd {
     max-height: 28vh;
   }
 }
+
+.icon-btn:focus-visible,
+.btn:focus-visible,
+.chip:focus-visible,
+.vault-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
