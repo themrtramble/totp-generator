@@ -1,5 +1,5 @@
 /* TOTP Generator service worker — offline shell cache */
-const CACHE = 'totp-generator-v4';
+const CACHE = 'totp-generator-v4.0.1';
 const ASSETS = [
   './',
   './index.html',
@@ -48,3 +48,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
