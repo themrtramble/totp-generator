@@ -1043,7 +1043,7 @@ const app = Vue.createApp({
 
       const payload = {
         secret: this.normalizedSecret,
-        label: this.accountLabel || 'Untitled',
+        label: this.accountLabel || this.issuer || 'Untitled',
         issuer: this.issuer || '',
         digits: Number(this.digits) || 6,
         period: Number(this.period) || 30,
