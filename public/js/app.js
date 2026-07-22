@@ -785,6 +785,7 @@ const app = Vue.createApp({
         this.nextToken = null;
         this._lastToken = null;
         this.secretError = this.secretStatus.message || 'Invalid Base32 secret key';
+        this.updateDocumentTitle();
         return;
       }
 
@@ -810,6 +811,7 @@ const app = Vue.createApp({
         this.previousToken = prev;
         this.nextToken = upcoming;
         this._lastToken = current;
+        this.updateDocumentTitle();
       } catch (e) {
         this.token = null;
         this.previousToken = null;
@@ -1268,6 +1270,16 @@ const app = Vue.createApp({
       this.activeAccountId = null;
       this.tick();
       this.persistPrefs();
+    },
+
+    updateDocumentTitle() {
+      try {
+        if (this.token) {
+          document.title = this.updatingIn + 's · ' + this.token + ' · TOTP';
+        } else {
+          document.title = 'TOTP Generator · MrTramble';
+        }
+      } catch (e) { /* ignore */ }
     },
 
     formatCodeGroups,
