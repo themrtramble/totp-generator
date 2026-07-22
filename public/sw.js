@@ -12,6 +12,7 @@ const ASSETS = [
   './manifest.webmanifest',
   './favicon.ico',
   './favicon.svg',
+  './humans.txt',
   './img/favicon-16.png',
   './img/favicon-32.png',
   './img/favicon-48.png',
