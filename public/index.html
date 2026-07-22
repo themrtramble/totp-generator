@@ -1,19 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-accent="violet" data-density="comfortable" data-motion="full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Generate time-based one-time passwords (TOTP) entirely in your browser. Offline, private, no server.">
-  <meta name="theme-color" content="#070b14">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Ultra-modern TOTP generator — multi-account vault, QR export, offline PWA. Fully private, no server.">
+  <meta name="theme-color" content="#05070f">
   <meta name="author" content="MrTramble / tramblebot">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="img/icon-192.svg">
   <title>TOTP Generator · MrTramble</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <div class="bg-scene" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
   <div class="bg-orb o1" aria-hidden="true"></div>
   <div class="bg-orb o2" aria-hidden="true"></div>
   <div class="bg-orb o3" aria-hidden="true"></div>
@@ -21,343 +28,656 @@
   <script defer src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script defer src="js/assets/otpauth-9.1.3.min.js"></script>
   <script defer src="js/assets/clipboard-2.0.6.min.js"></script>
-  <script defer src="js/app.js?v=3.5"></script>
+  <script defer src="js/assets/qrcodejs.min.js"></script>
+  <script defer src="js/app.js?v=4.0"></script>
 
-  <main id="app" class="page" v-cloak>
-    <div class="shell">
-
-      <header class="brand">
-        <div class="brand-icon" aria-hidden="true">
+  <div id="app" v-cloak>
+    <header class="app-chrome">
+      <div class="chrome-brand">
+        <div class="chrome-logo" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
         </div>
-        <h1>TOTP Generator</h1>
-        <p>Secure one-time codes — fully offline in your browser</p>
-        <div class="badge-row">
-          <span class="badge"><span class="dot"></span> Client-side</span>
-          <span class="badge">No server</span>
-          <span class="badge">Local only</span>
-          <span class="badge">otpauth URI</span>
-          <span class="badge" :class="{ warn: !isOnline }" :title="isOnline ? 'Browser reports online (codes still local)' : 'Browser offline — codes still work'">
-            <span class="dot" :class="{ muted: !isOnline }"></span>
-            {{ isOnline ? 'Ready' : 'Offline mode' }}
-          </span>
+        <div class="chrome-titles">
+          <strong>TOTP Generator</strong>
+          <span>Private · offline · multi-account</span>
         </div>
-      </header>
+      </div>
 
-      <div class="card">
-        <section class="token-panel">
-          <div v-if="accountLabel" class="account-chip" :title="accountLabel">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            <span>{{ accountLabel }}</span>
+      <div class="chrome-actions">
+        <span
+          class="status-pill"
+          :class="{ warn: !isOnline }"
+          :title="isOnline ? 'Browser online (codes still local)' : 'Offline — codes still work'"
+        >
+          <span class="dot" :class="{ muted: !isOnline }"></span>
+          {{ isOnline ? 'Ready' : 'Offline' }}
+        </span>
+
+        <button type="button" class="icon-btn" title="Toggle vault" :class="{ active: showVault }" @click="showVault = !showVault" aria-label="Toggle vault">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2"/>
+            <path d="M9 4v16"/>
+          </svg>
+        </button>
+
+        <button type="button" class="icon-btn" title="Theme" @click="cycleTheme" aria-label="Cycle theme">
+          <svg v-if="theme === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg v-else-if="theme === 'light'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+          </svg>
+        </button>
+
+        <button type="button" class="icon-btn" title="Keyboard shortcuts (?)" @click="showHelp = true" aria-label="Help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </button>
+
+        <button type="button" class="icon-btn" title="Settings" :class="{ active: showSettings }" @click="showSettings = true" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="shell">
+        <aside class="vault-panel" v-show="showVault" aria-label="Account vault">
+          <div class="vault-head">
+            <h2>Vault</h2>
+            <span class="vault-count">{{ vault.length }}</span>
           </div>
 
-          <div class="token-ring-wrap" :class="{ urgent: isUrgent }" aria-hidden="true">
-            <svg class="token-ring" viewBox="0 0 118 118">
-              <defs>
-                <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#8b7cff"/>
-                  <stop offset="55%" stop-color="#5b4dff"/>
-                  <stop offset="100%" stop-color="#2ee6c5"/>
-                </linearGradient>
-              </defs>
-              <circle class="track" cx="59" cy="59" r="50"/>
-              <circle
-                class="progress"
-                :class="{ urgent: isUrgent }"
-                cx="59" cy="59" r="50"
-                :stroke-dasharray="circumference"
-                :stroke-dashoffset="ringOffset"
-              />
-            </svg>
-            <div class="token-ring-center">
-              <span class="secs" :class="{ urgent: isUrgent }">{{ updatingIn }}</span>
-              <span class="label">sec left</span>
-            </div>
-          </div>
-
-          <div
-            class="token-digits"
-            id="token"
-            role="button"
-            tabindex="0"
-            :aria-label="token ? 'One-time code ' + token + '. Click to copy' : 'No code yet'"
-            :title="token ? 'Click to copy' : ''"
-            @click="copyToken"
-            @keydown.enter.prevent="copyToken"
-            @keydown.space.prevent="copyToken"
-          >
-            <span
-              v-for="(d, i) in tokenDigits"
-              :key="i"
-              class="digit"
-              :class="{
-                flip: d.flip,
-                placeholder: !token,
-                'gap-after': token && (i + 1) % 3 === 0 && i < tokenDigits.length - 1
-              }"
-            >{{ d.char }}</span>
-          </div>
-
-          <p class="token-hint">
-            {{ token ? 'Tap code to copy · Ctrl+Enter · c' : 'Enter a valid secret key or paste an otpauth URI' }}
-          </p>
-          <p class="shortcut-hint" v-if="token">
-            <kbd>c</kbd> copy
-            <kbd>s</kbd> share
-            <kbd>p</kbd> previous
-            <kbd>/</kbd> secret
-          </p>
-
-          <p v-if="clockSkewHint" class="skew-hint">{{ clockSkewHint }}</p>
-
-          <div class="timer-bar" :class="{ urgent: isUrgent }" aria-hidden="true">
-            <span :style="{ width: progressPercent + '%' }"></span>
-          </div>
-
-          <div class="token-actions">
-            <button
-              type="button"
-              class="btn btn-primary"
-              :class="{ copied: copied }"
-              id="clipboard-button"
-              :data-clipboard-text="token || ''"
-              :disabled="!token"
+          <div class="vault-tools">
+            <input
+              class="vault-search"
+              type="search"
+              v-model="vaultQuery"
+              placeholder="Search accounts…"
+              aria-label="Search vault"
             >
-              <svg v-if="!copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
-              {{ copied ? 'Copied!' : 'Copy code' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-ghost"
-              :disabled="!shareUrl"
-              title="Copy private share link (# fragment)"
-              @click="copyShareLink"
-            >
+            <button type="button" class="icon-btn" title="Add current secret to vault" @click="saveCurrentToVault" aria-label="Add to vault">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              Share
-            </button>
-            <button
-              type="button"
-              class="btn btn-ghost"
-              :disabled="!otpAuthUri"
-              title="Copy otpauth:// URI for authenticator apps"
-              @click="copyOtpAuthUri"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
-              URI
             </button>
           </div>
 
-          <div class="previous-row" v-if="previousToken || nextToken">
-            <button
-              type="button"
-              class="previous-toggle"
-              :class="{ open: showPrevious }"
-              @click="showPrevious = !showPrevious"
-              :aria-expanded="showPrevious"
-            >
-              Adjacent codes
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            <div class="previous-body" :class="{ open: showPrevious }" v-show="showPrevious">
-              <div class="adjacent-grid">
-                <div class="adjacent-col" v-if="previousToken">
-                  <span class="adjacent-label">Previous</span>
-                  <button
-                    type="button"
-                    class="previous-code"
-                    :aria-label="'Previous code ' + previousToken + '. Click to copy'"
-                    @click="copyPrevious"
-                    title="Copy previous period code (clock skew)"
-                  >
-                    <span
-                      v-for="(ch, i) in previousDigits"
-                      :key="'p'+i"
-                      class="prev-digit"
-                      :class="{ 'gap-after': (i + 1) % 3 === 0 && i < previousDigits.length - 1 }"
-                    >{{ ch }}</span>
-                  </button>
-                </div>
-                <div class="adjacent-col" v-if="nextToken">
-                  <span class="adjacent-label">Next</span>
-                  <button
-                    type="button"
-                    class="previous-code"
-                    :aria-label="'Next code ' + nextToken + '. Click to copy'"
-                    @click="copyNext"
-                    title="Copy next period code"
-                  >
-                    <span
-                      v-for="(ch, i) in nextDigits"
-                      :key="'n'+i"
-                      class="prev-digit"
-                      :class="{ 'gap-after': (i + 1) % 3 === 0 && i < nextDigits.length - 1 }"
-                    >{{ ch }}</span>
-                  </button>
-                </div>
-              </div>
-              <span class="previous-note">Use if the site rejects the current code (clock skew)</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="form-panel">
-          <div class="field">
-            <div class="field-label">
-              <label for="secret">Secret key</label>
-              <span class="field-hint">Base32 · otpauth URI · stays on device</span>
-            </div>
-            <div class="input-wrap">
-              <input
-                id="secret"
-                class="input has-toggle"
-                :class="{ invalid: secretError }"
-                :type="showSecret ? 'text' : 'password'"
-                v-model="secret_key"
-                @input="onSecretInput"
-                @paste="onSecretPaste"
-                @blur="normalizeSecretField"
-                placeholder="Base32 secret or otpauth://totp/..."
-                autocomplete="off"
-                spellcheck="false"
-                autocapitalize="characters"
-              >
+          <ul class="vault-list" v-if="filteredVault.length">
+            <li v-for="item in filteredVault" :key="item.id">
               <button
                 type="button"
-                class="input-icon-btn"
-                :title="showSecret ? 'Hide secret' : 'Show secret'"
-                :aria-label="showSecret ? 'Hide secret' : 'Show secret'"
-                @click="showSecret = !showSecret; persistPrefs()"
+                class="vault-item"
+                :class="{ active: activeAccountId === item.id }"
+                @click="loadAccount(item.id)"
               >
-                <svg v-if="!showSecret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+                <span class="vault-dot" :style="{ background: item.color || 'var(--accent)' }"></span>
+                <span class="vault-meta">
+                  <strong>{{ item.label || 'Untitled' }}</strong>
+                  <span>{{ item.issuer || item.algorithm || 'TOTP' }} · {{ item.digits }}d · {{ item.period }}s</span>
+                </span>
+                <span class="vault-pin" v-if="item.pinned" title="Pinned" aria-label="Pinned">★</span>
+              </button>
+            </li>
+          </ul>
+          <div class="vault-empty" v-else>
+            <strong>{{ vault.length ? 'No matches' : 'Vault is empty' }}</strong>
+            Save secrets locally to switch accounts instantly.
+          </div>
+
+          <div class="vault-foot">
+            <button type="button" class="btn btn-ghost btn-sm" @click="exportVault">Export</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="triggerImport">Import</button>
+            <input ref="importFile" type="file" accept="application/json,.json" class="hidden" @change="importVaultFile">
+          </div>
+        </aside>
+
+        <div class="workspace">
+          <header class="hero">
+            <h1>Secure one-time codes</h1>
+            <p>Fully offline in your browser — nothing leaves this device</p>
+            <div class="badge-row">
+              <span class="badge"><span class="dot"></span> Client-side</span>
+              <span class="badge">No server</span>
+              <span class="badge">Vault · local</span>
+              <span class="badge">otpauth + QR</span>
+              <span class="badge">PWA ready</span>
+            </div>
+          </header>
+
+          <div class="card">
+            <section class="token-panel">
+              <div v-if="displayLabel" class="account-chip" :title="displayLabel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
+                <span>{{ displayLabel }}</span>
+              </div>
+
+              <div class="token-ring-wrap" :class="{ urgent: isUrgent }" aria-hidden="true">
+                <svg class="token-ring" viewBox="0 0 126 126">
+                  <defs>
+                    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="var(--accent)"/>
+                      <stop offset="55%" stop-color="var(--accent-deep)"/>
+                      <stop offset="100%" stop-color="var(--accent-2)"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="track" cx="63" cy="63" r="54"/>
+                  <circle
+                    class="progress"
+                    :class="{ urgent: isUrgent }"
+                    cx="63" cy="63" r="54"
+                    :stroke-dasharray="circumference"
+                    :stroke-dashoffset="ringOffset"
+                  />
                 </svg>
-              </button>
-            </div>
-            <div class="field-tools">
-              <button type="button" class="text-btn" @click="normalizeSecretField" title="Strip spaces and uppercase">
-                Clean secret
-              </button>
-              <button type="button" class="text-btn danger" @click="clearSecret" title="Clear secret from memory">
-                Clear
-              </button>
-            </div>
-            <p v-if="secretError" class="error-msg">{{ secretError }}</p>
-          </div>
-
-          <div class="advanced">
-            <button
-              type="button"
-              class="advanced-toggle"
-              :class="{ open: showAdvanced }"
-              @click="showAdvanced = !showAdvanced; persistPrefs()"
-              :aria-expanded="showAdvanced"
-            >
-              Advanced options
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-
-            <div class="advanced-body" :class="{ open: showAdvanced }">
-              <div class="field">
-                <div class="field-label">
-                  <label>Digits</label>
+                <div class="token-ring-center">
+                  <span class="secs" :class="{ urgent: isUrgent }">{{ updatingIn }}</span>
+                  <span class="label">sec left</span>
                 </div>
-                <div class="chips" role="group" aria-label="Number of digits">
-                  <button
-                    v-for="n in digitOptions"
-                    :key="'d'+n"
-                    type="button"
-                    class="chip"
-                    :class="{ active: digits === n }"
-                    @click="digits = n"
-                  >{{ n }}</button>
+              </div>
+
+              <div
+                class="token-digits"
+                id="token"
+                role="button"
+                tabindex="0"
+                :aria-label="token ? 'One-time code ' + token + '. Click to copy' : 'No code yet'"
+                :title="token ? 'Click to copy' : ''"
+                @click="copyToken"
+                @keydown.enter.prevent="copyToken"
+                @keydown.space.prevent="copyToken"
+              >
+                <span
+                  v-for="(d, i) in tokenDigits"
+                  :key="i"
+                  class="digit"
+                  :class="{
+                    flip: d.flip,
+                    placeholder: !token,
+                    'gap-after': token && (i + 1) % 3 === 0 && i < tokenDigits.length - 1
+                  }"
+                >{{ d.char }}</span>
+              </div>
+
+              <p class="token-hint">
+                {{ token ? 'Tap code to copy · Ctrl+Enter · c' : 'Enter a valid secret or paste an otpauth URI' }}
+              </p>
+              <p class="shortcut-hint" v-if="token">
+                <kbd>c</kbd> copy
+                <kbd>s</kbd> share
+                <kbd>q</kbd> QR
+                <kbd>p</kbd> adjacent
+                <kbd>/</kbd> secret
+                <kbd>?</kbd> help
+              </p>
+
+              <div class="clock-row">
+                <span class="clock-chip" title="Local device clock">{{ localClockLabel }}</span>
+                <span class="clock-chip" v-if="timeOffset" title="Manual clock offset">offset {{ timeOffset > 0 ? '+' : '' }}{{ timeOffset }}s</span>
+                <span class="clock-chip" v-if="progressPercent != null">{{ Math.round(progressPercent) }}% left</span>
+              </div>
+
+              <p v-if="clockSkewHint" class="skew-hint">{{ clockSkewHint }}</p>
+
+              <div class="timer-bar" :class="{ urgent: isUrgent }" aria-hidden="true">
+                <span :style="{ width: progressPercent + '%' }"></span>
+              </div>
+
+              <div class="token-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  :class="{ copied: copied }"
+                  id="clipboard-button"
+                  :data-clipboard-text="token || ''"
+                  :disabled="!token"
+                >
+                  <svg v-if="!copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                  {{ copied ? 'Copied!' : 'Copy code' }}
+                </button>
+
+                <button type="button" class="btn btn-ghost" :disabled="!shareUrl" title="Copy private share link" @click="copyShareLink">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                  Share
+                </button>
+
+                <button type="button" class="btn btn-ghost" :disabled="!otpAuthUri" title="Show QR for authenticator apps" @click="openQrModal">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  QR
+                </button>
+
+                <button type="button" class="btn btn-ghost" :disabled="!otpAuthUri" title="Copy otpauth URI" @click="copyOtpAuthUri">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  URI
+                </button>
+              </div>
+
+              <div class="previous-row" v-if="previousToken || nextToken">
+                <button
+                  type="button"
+                  class="previous-toggle"
+                  :class="{ open: showPrevious }"
+                  @click="showPrevious = !showPrevious"
+                  :aria-expanded="showPrevious"
+                >
+                  Adjacent codes
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                <div class="previous-body" v-show="showPrevious">
+                  <div class="adjacent-grid">
+                    <div class="adjacent-col" v-if="previousToken">
+                      <span class="adjacent-label">Previous</span>
+                      <button type="button" class="previous-code" @click="copyPrevious" :aria-label="'Previous code ' + previousToken">
+                        <span
+                          v-for="(ch, i) in previousDigits"
+                          :key="'p'+i"
+                          class="prev-digit"
+                          :class="{ 'gap-after': (i + 1) % 3 === 0 && i < previousDigits.length - 1 }"
+                        >{{ ch }}</span>
+                      </button>
+                    </div>
+                    <div class="adjacent-col" v-if="nextToken">
+                      <span class="adjacent-label">Next</span>
+                      <button type="button" class="previous-code" @click="copyNext" :aria-label="'Next code ' + nextToken">
+                        <span
+                          v-for="(ch, i) in nextDigits"
+                          :key="'n'+i"
+                          class="prev-digit"
+                          :class="{ 'gap-after': (i + 1) % 3 === 0 && i < nextDigits.length - 1 }"
+                        >{{ ch }}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <span class="previous-note">Use if a site rejects the current code (clock skew)</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-panel">
+              <div class="field-grid">
+                <div class="field">
+                  <div class="field-label">
+                    <label for="account-label">Account label</label>
+                  </div>
+                  <input
+                    id="account-label"
+                    class="input font-ui"
+                    type="text"
+                    v-model="accountLabel"
+                    @change="onAccountMetaChange"
+                    placeholder="e.g. alice@example.com"
+                    autocomplete="off"
+                    spellcheck="false"
+                  >
+                </div>
+                <div class="field">
+                  <div class="field-label">
+                    <label for="issuer">Issuer</label>
+                  </div>
+                  <input
+                    id="issuer"
+                    class="input font-ui"
+                    type="text"
+                    v-model="issuer"
+                    @change="onAccountMetaChange"
+                    placeholder="e.g. GitHub"
+                    autocomplete="off"
+                    spellcheck="false"
+                  >
                 </div>
               </div>
 
               <div class="field">
                 <div class="field-label">
-                  <label>Period</label>
-                  <span class="field-hint">seconds</span>
+                  <label for="secret">Secret key</label>
+                  <span class="field-hint">Base32 · otpauth URI · on-device only</span>
                 </div>
-                <div class="chips" role="group" aria-label="Token period">
+                <div class="input-wrap">
+                  <input
+                    id="secret"
+                    class="input has-toggle"
+                    :class="{ invalid: secretError }"
+                    :type="showSecret ? 'text' : 'password'"
+                    v-model="secret_key"
+                    @input="onSecretInput"
+                    @paste="onSecretPaste"
+                    @blur="normalizeSecretField"
+                    placeholder="Base32 secret or otpauth://totp/..."
+                    autocomplete="off"
+                    spellcheck="false"
+                    autocapitalize="characters"
+                  >
                   <button
-                    v-for="n in periodOptions"
-                    :key="'p'+n"
                     type="button"
-                    class="chip"
-                    :class="{ active: period === n }"
-                    @click="period = n"
-                  >{{ n }}s</button>
+                    class="input-icon-btn"
+                    :title="showSecret ? 'Hide secret' : 'Show secret'"
+                    :aria-label="showSecret ? 'Hide secret' : 'Show secret'"
+                    @click="showSecret = !showSecret; persistPrefs()"
+                  >
+                    <svg v-if="!showSecret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="field-tools">
+                  <button type="button" class="text-btn" @click="normalizeSecretField">Clean secret</button>
+                  <button type="button" class="text-btn" @click="saveCurrentToVault">Save to vault</button>
+                  <button type="button" class="text-btn" v-if="activeAccountId" @click="togglePinActive">
+                    {{ activeAccountPinned ? 'Unpin' : 'Pin' }}
+                  </button>
+                  <button type="button" class="text-btn" v-if="activeAccountId" @click="deleteActiveAccount">Delete account</button>
+                  <button type="button" class="text-btn danger" @click="clearSecret">Clear</button>
+                </div>
+                <p v-if="secretError" class="error-msg">{{ secretError }}</p>
+              </div>
+
+              <div class="advanced">
+                <button
+                  type="button"
+                  class="advanced-toggle"
+                  :class="{ open: showAdvanced }"
+                  @click="showAdvanced = !showAdvanced; persistPrefs()"
+                  :aria-expanded="showAdvanced"
+                >
+                  Advanced options
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                <div class="advanced-body" :class="{ open: showAdvanced }">
+                  <div class="field">
+                    <div class="field-label"><label>Digits</label></div>
+                    <div class="chips" role="group" aria-label="Number of digits">
+                      <button
+                        v-for="n in digitOptions"
+                        :key="'d'+n"
+                        type="button"
+                        class="chip"
+                        :class="{ active: digits === n }"
+                        @click="digits = n"
+                      >{{ n }}</button>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label">
+                      <label>Period</label>
+                      <span class="field-hint">seconds</span>
+                    </div>
+                    <div class="chips" role="group" aria-label="Token period">
+                      <button
+                        v-for="n in periodOptions"
+                        :key="'p'+n"
+                        type="button"
+                        class="chip"
+                        :class="{ active: period === n }"
+                        @click="period = n"
+                      >{{ n }}s</button>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label"><label>Algorithm</label></div>
+                    <div class="chips" role="group" aria-label="Hash algorithm">
+                      <button
+                        v-for="alg in algorithmOptions"
+                        :key="alg.value"
+                        type="button"
+                        class="chip"
+                        :class="{ active: algorithm === alg.value }"
+                        @click="algorithm = alg.value"
+                      >{{ alg.label }}</button>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label">
+                      <label for="time-offset">Clock offset</label>
+                      <span class="field-hint">fix skew</span>
+                    </div>
+                    <div class="range-row">
+                      <input
+                        id="time-offset"
+                        type="range"
+                        min="-60"
+                        max="60"
+                        step="1"
+                        v-model.number="timeOffset"
+                        @input="persistPrefs(); tick()"
+                      >
+                      <span class="range-val">{{ timeOffset > 0 ? '+' : '' }}{{ timeOffset }}s</span>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label"><label>Account color</label></div>
+                    <div class="chips" role="group" aria-label="Account color">
+                      <button
+                        v-for="c in colorOptions"
+                        :key="c"
+                        type="button"
+                        class="chip swatch"
+                        :class="{ active: accountColor === c }"
+                        :style="{ '--swatch': c }"
+                        @click="accountColor = c; onAccountMetaChange()"
+                        :aria-label="'Color ' + c"
+                      ></button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="field">
-                <div class="field-label">
-                  <label>Algorithm</label>
-                </div>
-                <div class="chips" role="group" aria-label="Hash algorithm">
-                  <button
-                    v-for="alg in algorithmOptions"
-                    :key="alg.value"
-                    type="button"
-                    class="chip"
-                    :class="{ active: algorithm === alg.value }"
-                    @click="algorithm = alg.value"
-                  >{{ alg.label }}</button>
-                </div>
+              <div class="meta-bar" v-if="token">
+                <span class="meta-pill">{{ algorithm }}</span>
+                <span class="meta-pill">{{ digits }} digits</span>
+                <span class="meta-pill">{{ period }}s period</span>
+                <span class="meta-pill dim">prefs + vault local</span>
               </div>
+            </section>
+          </div>
+
+          <section class="history-panel" v-if="copyHistory.length">
+            <h3>Recently copied</h3>
+            <div class="history-list">
+              <button
+                v-for="(h, idx) in copyHistory"
+                :key="idx + h.code"
+                type="button"
+                class="history-item"
+                :title="h.label + ' · ' + h.atLabel"
+                @click="recopyHistory(h)"
+              >{{ h.code }}</button>
             </div>
-          </div>
+          </section>
+        </div>
+      </div>
+    </main>
 
-          <div class="meta-bar" v-if="token">
-            <span class="meta-pill">{{ algorithm }}</span>
-            <span class="meta-pill">{{ digits }} digits</span>
-            <span class="meta-pill">{{ period }}s period</span>
-            <span class="meta-pill dim">prefs saved locally</span>
+    <footer class="site-footer">
+      <span class="watermark">MrTramble · itsmrtramble · tramblebot</span>
+    </footer>
+
+    <!-- Settings modal -->
+    <div class="overlay" :class="{ open: showSettings }" @click.self="showSettings = false" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="modal" v-if="showSettings">
+        <div class="modal-head">
+          <div>
+            <h2>Settings</h2>
+            <p>Appearance, behavior, and privacy — all stored locally</p>
           </div>
-        </section>
+          <button type="button" class="icon-btn" @click="showSettings = false" aria-label="Close settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-section">
+          <h3>Theme</h3>
+          <div class="chips" role="group" aria-label="Theme">
+            <button type="button" class="chip" :class="{ active: theme === 'dark' }" @click="setTheme('dark')">Dark</button>
+            <button type="button" class="chip" :class="{ active: theme === 'light' }" @click="setTheme('light')">Light</button>
+            <button type="button" class="chip" :class="{ active: theme === 'system' }" @click="setTheme('system')">System</button>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h3>Accent</h3>
+          <div class="chips" role="group" aria-label="Accent color">
+            <button v-for="a in accentOptions" :key="a" type="button" class="chip" :class="{ active: accent === a }" @click="setAccent(a)">{{ a }}</button>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h3>Density</h3>
+          <div class="chips">
+            <button type="button" class="chip" :class="{ active: density === 'comfortable' }" @click="setDensity('comfortable')">Comfortable</button>
+            <button type="button" class="chip" :class="{ active: density === 'compact' }" @click="setDensity('compact')">Compact</button>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h3>Behavior</h3>
+          <div class="toggle-row">
+            <span>Auto-copy when code refreshes</span>
+            <label class="switch">
+              <input type="checkbox" v-model="autoCopyOnRefresh" @change="persistPrefs">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <span>Vibrate on copy (mobile)</span>
+            <label class="switch">
+              <input type="checkbox" v-model="hapticFeedback" @change="persistPrefs">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <span>Reduce motion</span>
+            <label class="switch">
+              <input type="checkbox" :checked="motion === 'reduce'" @change="setMotion($event.target.checked ? 'reduce' : 'full')">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <span>Show vault by default</span>
+            <label class="switch">
+              <input type="checkbox" v-model="showVault" @change="persistPrefs">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h3>Data</h3>
+          <div class="field-tools" style="margin-top:0">
+            <button type="button" class="btn btn-ghost btn-sm" @click="exportVault">Export vault JSON</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="triggerImport">Import vault JSON</button>
+            <button type="button" class="btn btn-ghost btn-sm" @click="clearCopyHistory">Clear copy history</button>
+            <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" @click="wipeAllLocalData">Wipe all local data</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="toast" :class="{ show: toastVisible }" role="status" aria-live="polite">
+    <!-- Help modal -->
+    <div class="overlay" :class="{ open: showHelp }" @click.self="showHelp = false" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+      <div class="modal" v-if="showHelp">
+        <div class="modal-head">
+          <div>
+            <h2>Keyboard shortcuts</h2>
+            <p>Fast controls while the secret field is not focused</p>
+          </div>
+          <button type="button" class="icon-btn" @click="showHelp = false" aria-label="Close help">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <ul class="help-list">
+          <li><span>Copy current code</span><span><kbd>c</kbd> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd></span></li>
+          <li><span>Copy share link</span><kbd>s</kbd></li>
+          <li><span>Show QR code</span><kbd>q</kbd></li>
+          <li><span>Toggle adjacent codes</span><kbd>p</kbd></li>
+          <li><span>Focus secret field</span><kbd>/</kbd></li>
+          <li><span>Save to vault</span><kbd>v</kbd></li>
+          <li><span>Toggle vault panel</span><kbd>b</kbd></li>
+          <li><span>Open settings</span><kbd>,</kbd></li>
+          <li><span>Help</span><kbd>?</kbd></li>
+          <li><span>Close modals</span><kbd>Esc</kbd></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- QR modal -->
+    <div class="overlay" :class="{ open: showQr }" @click.self="showQr = false" role="dialog" aria-modal="true" aria-label="QR code">
+      <div class="modal" v-if="showQr">
+        <div class="modal-head">
+          <div>
+            <h2>Authenticator QR</h2>
+            <p>Scan with any TOTP app — generated offline</p>
+          </div>
+          <button type="button" class="icon-btn" @click="showQr = false" aria-label="Close QR">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="qr-box" ref="qrMount"></div>
+        <button type="button" class="btn btn-primary btn-block" @click="copyOtpAuthUri">Copy otpauth URI</button>
+      </div>
+    </div>
+
+    <div class="toast" :class="{ show: toastVisible, error: toastType === 'error', info: toastType === 'info' }" role="status" aria-live="polite">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 6L9 17l-5-5"/>
+        <path v-if="toastType !== 'error'" d="M20 6L9 17l-5-5"/>
+        <path v-else d="M18 6L6 18M6 6l12 12"/>
       </svg>
       {{ toastMessage }}
     </div>
-  </main>
-
-  <footer class="site-footer">
-    <span class="watermark">MrTramble · itsmrtramble · tramblebot</span>
-  </footer>
+  </div>
 </body>
 </html>
