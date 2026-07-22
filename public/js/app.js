@@ -339,6 +339,9 @@ const app = Vue.createApp({
       let list = this.vault.slice();
       list.sort((a, b) => {
         if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1;
+        const bu = Number(b.lastUsedAt) || 0;
+        const au = Number(a.lastUsedAt) || 0;
+        if (bu !== au) return bu - au;
         return String(a.label || '').localeCompare(String(b.label || ''));
       });
       if (!q) return list;
