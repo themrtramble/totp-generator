@@ -234,6 +234,7 @@ const app = Vue.createApp({
     this.bindKeyboardShortcuts();
     this.bindSystemThemeListener();
     this.registerServiceWorker();
+    this.bindDropImport();
 
     this.clipboardButton = new ClipboardJS('#clipboard-button');
     this.clipboardButton.on('success', (e) => {
@@ -248,6 +249,7 @@ const app = Vue.createApp({
     this.stopSmoothLoop();
     this.unbindLifecycleListeners();
     this.unbindKeyboardShortcuts();
+    this.unbindDropImport();
     clearTimeout(this._copyResetTimer);
     clearTimeout(this._toastTimer);
     clearTimeout(this._flipClearTimer);
@@ -560,6 +562,11 @@ const app = Vue.createApp({
       window.addEventListener('hashchange', this._onHashChange);
     },
 
+    unbindDropImport() {
+      if (this._onDragOver) window.removeEventListener('dragover', this._onDragOver);
+      if (this._onDrop) window.removeEventListener('drop', this._onDrop);
+    },
+
     unbindLifecycleListeners() {
       if (this._onVisibility) document.removeEventListener('visibilitychange', this._onVisibility);
       if (this._onOnline) window.removeEventListener('online', this._onOnline);
@@ -649,6 +656,32 @@ const app = Vue.createApp({
 
     unbindKeyboardShortcuts() {
       if (this._onKeydown) window.removeEventListener('keydown', this._onKeydown);
+    },
+
+    bindDropImport() {
+      this._onDragOver = (e) => {
+        if (!e.dataTransfer) return;
+        e.preventDefault();
+      };
+      this._onDrop = (e) => {
+        if (!e.dataTransfer) return;
+        e.preventDefault();
+        const text = e.dataTransfer.getData('text') || e.dataTransfer.getData('text/plain');
+        if (!text) return;
+        const parsed = parseOtpAuthUri(text);
+        if (parsed) {
+          this.applyOtpAuth(parsed);
+          this.showToast('Dropped otpauth URI imported', 'success');
+          return;
+        }
+        const cleaned = normalizeSecret(text);
+        if (cleaned && cleaned.length >= 8 && isValidBase32(cleaned)) {
+          this.secret_key = cleaned;
+          this.showToast('Dropped secret applied', 'success');
+        }
+      };
+      window.addEventListener('dragover', this._onDragOver);
+      window.addEventListener('drop', this._onDrop);
     },
 
     startClockLabel() {
@@ -1214,3 +1247,4 @@ const app = Vue.createApp({
 });
 
 app.mount('#app');
+
