@@ -238,6 +238,7 @@
                 <span class="clock-chip" title="Local device clock">{{ localClockLabel }}</span>
                 <span class="clock-chip" v-if="timeOffset" title="Manual clock offset">offset {{ timeOffset > 0 ? '+' : '' }}{{ timeOffset }}s</span>
                 <span class="clock-chip" v-if="progressPercent != null">{{ Math.round(progressPercent) }}% left</span>
+                <span class="clock-chip" v-if="token">{{ remainingLabel }}</span>
               </div>
 
               <p v-if="clockSkewHint" class="skew-hint">{{ clockSkewHint }}</p>
@@ -686,5 +687,6 @@
   </div>
 </body>
 </html>
+
 
 
