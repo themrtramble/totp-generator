@@ -126,6 +126,10 @@ function saveJson(key, value) {
   }
 }
 
+function isDemoSecret(secret) {
+  return normalizeSecret(secret) === 'JBSWY3DPEHPK3PXP';
+}
+
 function formatCodeGroups(code) {
   if (!code) return '';
   return String(code).replace(/(\d{3})(?=\d)/g, '$1 ');
@@ -1257,6 +1261,7 @@ const app = Vue.createApp({
 });
 
 app.mount('#app');
+
 
 
 
