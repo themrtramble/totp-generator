@@ -1065,7 +1065,7 @@ const app = Vue.createApp({
       }
       this.persistVault();
       this.persistPrefs();
-      this.showToast('Saved to vault', 'success');
+      this.showToast(existing >= 0 ? 'Updated existing vault account' : 'Saved to vault', 'success');
     },
 
     loadAccount(id) {
@@ -1257,6 +1257,7 @@ const app = Vue.createApp({
 });
 
 app.mount('#app');
+
 
 
 
